@@ -1,0 +1,11 @@
+run = "python stock_predictor_web.py"
+language = "python3"
+
+[nix]
+channel = "stable-23_11"
+
+[unitTest]
+language = "python3"
+
+[deployment]
+run = ["python", "stock_predictor_web.py"]

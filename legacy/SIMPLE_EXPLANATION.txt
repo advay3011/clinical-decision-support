@@ -1,0 +1,141 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    STOCK MARKET PREDICTOR AGENT                            ║
+║                         SIMPLE EXPLANATION                                 ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+WHAT IS IT?
+───────────
+An AI that watches stocks and explains what's happening in plain English.
+
+HOW DOES IT WORK?
+─────────────────
+You ask → Agent analyzes → Agent explains
+
+EXAMPLE:
+You: "Why did AAPL drop?"
+Agent: "Heavy selling (volume 2x normal). Likely bad news or profit-taking."
+
+THE 7 TOOLS (WHAT IT CAN DO)
+────────────────────────────
+
+1. FETCH DATA
+   Gets stock prices for the last 30 days
+   
+2. MOVING AVERAGE
+   Checks if stock is going UP 📈 or DOWN 📉
+   
+3. VOLATILITY
+   Measures how risky the stock is
+   LOW = Safe | MEDIUM = Normal | HIGH = Risky
+   
+4. PREDICTION
+   Predicts where stock will go in 5 days
+   
+5. SUPPORT & RESISTANCE
+   Finds where to BUY (floor) and SELL (ceiling)
+   
+6. ALIBI ANALYSIS ⭐ NEW
+   Explains WHY the price moved
+   Shows 3 possible reasons ranked by confidence
+   
+7. REPORT
+   Summarizes everything in one document
+
+HOW TO USE IT
+─────────────
+
+STEP 1: Install
+$ pip install -r requirements.txt
+
+STEP 2: Add AWS credentials to .env file
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+
+STEP 3: Run
+$ python stock_predictor_web.py
+
+STEP 4: Open browser
+http://localhost:5000
+
+STEP 5: Ask questions!
+"Analyze AAPL"
+"Why did TSLA drop?"
+"Should I buy GOOGL?"
+
+EXAMPLE QUESTIONS & ANSWERS
+────────────────────────────
+
+Q: "Analyze AAPL"
+A: AAPL is at $150
+   Trend: BULLISH (going up)
+   Risk: MEDIUM
+   Prediction: UP to $155 in 5 days
+   Support: $140 | Resistance: $160
+   Signal: HOLD
+
+Q: "Why did TSLA drop?"
+A: 3 possible reasons:
+   1. Panic Selling (80% confidence) - Volume 3x normal
+   2. News Event (70% confidence) - Earnings miss?
+   3. Support Bounce (45% confidence) - Price bounced off floor
+
+Q: "Should I buy GOOGL?"
+A: GOOGL is BULLISH but at resistance level ($160)
+   Better to wait for dip to support ($140)
+   Signal: HOLD
+
+Q: "How risky is NVDA?"
+A: NVDA is HIGH risk
+   Price swings are big
+   Not for beginners
+
+WHAT YOU NEED
+─────────────
+✓ Python 3.11+
+✓ AWS account (free tier works)
+✓ Internet connection
+✓ 5 minutes to set up
+
+IMPORTANT
+─────────
+⚠️ This is NOT financial advice
+⚠️ Use for learning only
+⚠️ Always do your own research
+⚠️ Consult a financial advisor
+
+QUICK REFERENCE
+───────────────
+
+Tool              | Input        | Output
+──────────────────┼──────────────┼─────────────────
+Fetch Data        | Symbol       | 30 days prices
+Moving Average    | Prices       | UP/DOWN
+Volatility        | Prices       | Risk level
+Prediction        | Prices       | Target price
+Support/Res       | Prices       | BUY/SELL/HOLD
+Alibi Analysis    | Prices       | 3 reasons
+Report            | All data     | Summary
+
+TO SHARE WITH SOMEONE
+──────────────────────
+
+1. Send them:
+   - stock_predictor_agent.py
+   - stock_predictor_web.py
+   - templates/stock_predictor.html
+   - requirements.txt
+   - .env (with AWS keys)
+   - QUICK_START.md
+
+2. They run:
+   pip install -r requirements.txt
+   python stock_predictor_web.py
+
+3. They open:
+   http://localhost:5000
+
+4. They ask questions!
+
+THAT'S IT! 🚀
+
+═══════════════════════════════════════════════════════════════════════════════

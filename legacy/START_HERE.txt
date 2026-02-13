@@ -1,0 +1,117 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                  STOCK MARKET PREDICTOR AGENT                              ║
+║                                                                            ║
+║                         START HERE! 👈                                     ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+WHAT IS THIS?
+─────────────
+An AI agent that analyzes stocks and explains what's happening in plain English.
+
+WHAT CAN IT DO?
+───────────────
+✓ Tell you if a stock is going UP or DOWN
+✓ Measure how risky a stock is
+✓ Predict where a stock will go in 5 days
+✓ Find good places to BUY and SELL
+✓ Explain WHY a stock price moved
+✓ Give you a full trading report
+
+HOW TO USE IT?
+──────────────
+
+STEP 1: Install
+$ pip install -r requirements.txt
+
+STEP 2: Run
+$ python stock_predictor_web.py
+
+STEP 3: Open browser
+http://localhost:5000
+
+STEP 4: Ask questions!
+"Analyze AAPL"
+"Why did TSLA drop?"
+"Should I buy GOOGL?"
+
+THE 7 TOOLS
+───────────
+
+1. FETCH DATA
+   Gets stock prices for the last 30 days
+
+2. MOVING AVERAGE
+   Checks if stock is going UP or DOWN
+
+3. VOLATILITY
+   Measures how risky the stock is
+   LOW = Safe | MEDIUM = Normal | HIGH = Risky
+
+4. PREDICTION
+   Predicts where stock will go in 5 days
+
+5. SUPPORT & RESISTANCE
+   Finds where to BUY (floor) and SELL (ceiling)
+
+6. ALIBI ANALYSIS ⭐ NEW
+   Explains WHY the price moved
+   Shows 3 possible reasons ranked by confidence
+
+7. REPORT
+   Summarizes all analysis in one document
+
+EXAMPLE
+───────
+
+You: "Why did AAPL drop?"
+
+Agent: AAPL dropped $2.50 (1.2%) in the last 5 days.
+
+Here are 3 possible reasons:
+
+1. News Event (70% confidence)
+   Heavy selling pressure. Likely earnings miss or bad news.
+
+2. Range-bound (55% confidence)
+   Price moved within normal range. No major catalyst.
+
+3. Support Bounce (45% confidence)
+   Price bounced off support level at $165.
+
+Current Status: HOLD (wait for better entry)
+
+WHAT YOU NEED
+─────────────
+✓ Python 3.11+
+✓ AWS account (free tier works)
+✓ Internet connection
+✓ 5 minutes to set up
+
+IMPORTANT
+─────────
+⚠️ This is NOT financial advice
+⚠️ Use for learning only
+⚠️ Always do your own research
+⚠️ Consult a financial advisor before trading
+
+DOCUMENTATION
+──────────────
+Read these for more info:
+
+SIMPLE_EXPLANATION.txt  - Simple overview
+QUICK_START.md          - 2-minute setup
+TOOLS_EXPLAINED.md      - Detailed tool info
+SHARE_THIS.md           - How to share it
+FILES_TO_SHARE.txt      - What files to send
+
+READY?
+──────
+
+1. Install: pip install -r requirements.txt
+2. Run: python stock_predictor_web.py
+3. Open: http://localhost:5000
+4. Ask questions!
+
+That's it! 🚀

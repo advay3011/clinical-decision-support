@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Add MD files to docs",
+  "description": "Automatically adds newly created markdown files to the docs folder",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new markdown file was created. Move it to the docs folder if it's not already there."
+  },
+  "workspaceFolderName": "strands-agent",
+  "shortName": "add-md-to-docs"
+}
