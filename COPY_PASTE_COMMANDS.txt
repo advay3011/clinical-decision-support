@@ -1,0 +1,118 @@
+================================================================================
+COPY & PASTE COMMANDS - Push to GitHub
+================================================================================
+
+Follow these steps exactly:
+
+================================================================================
+STEP 1: CREATE GITHUB REPOSITORY
+================================================================================
+
+1. Open: https://github.com/new
+2. Fill in:
+   - Repository name: clinical-decision-support
+   - Description: 🏥 Clinical Decision Support Chatbot - AI-powered health assistant
+   - Visibility: Public
+   - Do NOT check "Initialize this repository with a README"
+3. Click "Create repository"
+
+================================================================================
+STEP 2: COPY YOUR USERNAME
+================================================================================
+
+After creating the repo, you'll see a URL like:
+https://github.com/YOUR_USERNAME/clinical-decision-support
+
+Copy YOUR_USERNAME from that URL.
+
+================================================================================
+STEP 3: RUN THESE COMMANDS
+================================================================================
+
+Replace YOUR_USERNAME with your actual GitHub username, then copy and paste:
+
+---
+
+git remote add origin https://github.com/YOUR_USERNAME/clinical-decision-support.git
+
+---
+
+git branch -M main
+
+---
+
+git push -u origin main
+
+---
+
+================================================================================
+EXAMPLE
+================================================================================
+
+If your GitHub username is "john-doe", run:
+
+git remote add origin https://github.com/john-doe/clinical-decision-support.git
+git branch -M main
+git push -u origin main
+
+================================================================================
+WHAT HAPPENS
+================================================================================
+
+1. First command: Connects your local repo to GitHub
+2. Second command: Renames branch to "main"
+3. Third command: Pushes all files to GitHub
+
+You'll see output like:
+   Enumerating objects: 156, done.
+   Counting objects: 100% (156/156), done.
+   ...
+   To https://github.com/YOUR_USERNAME/clinical-decision-support.git
+    * [new branch]      main -> main
+   Branch 'main' set up to track remote branch 'main' from 'origin'.
+
+================================================================================
+VERIFY ON GITHUB
+================================================================================
+
+1. Go to: https://github.com/YOUR_USERNAME/clinical-decision-support
+2. You should see all your files!
+
+================================================================================
+NEXT: DEPLOY TO STREAMLIT CLOUD
+================================================================================
+
+1. Go to: https://share.streamlit.io
+2. Sign in with GitHub
+3. Click "New app"
+4. Select:
+   - Repository: YOUR_USERNAME/clinical-decision-support
+   - Branch: main
+   - Main file path: streamlit_app.py
+5. Click "Deploy"
+
+Wait 2-5 minutes...
+
+================================================================================
+FINAL STEP: ADD API KEY
+================================================================================
+
+1. Click ⋯ (top right of your app)
+2. Select "Settings"
+3. Go to "Secrets"
+4. Add:
+   ANTHROPIC_API_KEY = "your-api-key-here"
+5. Save
+
+Your app is now live at:
+https://YOUR_USERNAME-clinical-decision-support.streamlit.app
+
+================================================================================
+DONE!
+================================================================================
+
+Your Clinical Decision Support Chatbot is deployed and live!
+
+Share your app link with friends and colleagues!
+
+================================================================================
