@@ -1,224 +1,223 @@
-# Strands Agent Framework - Project Workspace
+# Clinical Decision Support Chatbot
 
-A collection of AI agents built with the Strands Agent framework for various business use cases.
+A friendly, AI-powered clinical assistant built with the Strands Agents SDK. Provides health guidance, medication interaction checking, and symptom assessment using real medical data from NIH and FDA APIs.
 
-## 📁 Workspace Structure
+## 🏥 Features
+
+- **Patient Registration** - Register patients with name, DOB, and gender
+- **Real Medical Data** - Integrated RxNorm (NIH) and OpenFDA APIs
+- **9 Clinical Tools** - 6 local tools + 3 API-based tools
+- **Streamlit Web App** - Beautiful, user-friendly interface
+- **Streaming Responses** - Real-time word-by-word output
+- **Amazon Nova 2 Lite** - Fast, lightweight LLM model
+
+## 📁 Project Structure
 
 ```
 .
-├── agents/                    # Main agent implementations
-│   ├── stock_predictor_agent.py
-│   ├── supply_chain_optimizer_agent.py
-│   ├── ops_consult_agent.py
-│   ├── multi_agent_orchestrator.py
-│   └── consulting_agent_demo.py
+├── agents/
+│   ├── clinical_decision_support_agent.py          # CLI version
+│   ├── clinical_decision_support_streamlit.py      # Streamlit module
+│   ├── clinical_decision_support_enhanced.py       # With real medical APIs
+│   ├── test_clinical_agent.py                      # CLI tests
+│   └── test_real_medical_data.py                   # API tests
 │
-├── health_insights/           # Health Insights Agent (Educational)
-│   ├── health_insights_agent.py
-│   ├── health_insights_demo.py
-│   ├── test_health_insights.py
-│   ├── simple_test.py
-│   ├── quick_test.py
-│   └── health_insights_requirements.txt
+├── docs/
+│   ├── CLINICAL_DECISION_SUPPORT_README.md         # Main guide
+│   ├── CLINICAL_DECISION_SUPPORT_QUICKSTART.md     # Quick start
+│   ├── CLINICAL_DECISION_SUPPORT_COMPLETE_GUIDE.md # Deep dive
+│   ├── STRANDS_EXPLAINED_SIMPLE.md                 # Strands basics
+│   ├── STRANDS_AND_TOOLS_SIMPLE.md                 # One-page overview
+│   ├── HOW_ASSESS_VITALS_WORKS.md                  # Tool deep dive
+│   ├── APIS_USED.md                                # API documentation
+│   ├── MEDICAL_APIs_GUIDE.md                       # Medical API guide
+│   └── REAL_MEDICAL_DATA_INTEGRATION.md            # Integration details
 │
-├── docs/                      # Documentation
-│   ├── HEALTH_INSIGHTS_README.md
-│   ├── HEALTH_INSIGHTS_QUICK_START.md
-│   ├── HEALTH_INSIGHTS_ARCHITECTURE.md
-│   ├── HEALTH_INSIGHTS_EXAMPLES.md
-│   ├── HEALTH_INSIGHTS_SUMMARY.md
-│   ├── HEALTH_INSIGHTS_INDEX.md
-│   ├── RUN_TESTS.md
-│   └── TESTING_COMPLETE.txt
-│
-├── legacy/                    # Old files and tutorials
-│   └── (archived files)
-│
-├── .env                       # Environment variables
-├── requirements.txt           # Python dependencies
-└── README.md                  # This file
+├── streamlit_app.py                                # Main web app
+├── .env.example                                    # Environment template
+├── requirements.txt                                # Dependencies
+└── README.md                                       # This file
 ```
-
-## 🤖 Agents
-
-### 1. Stock Predictor Agent
-**Location:** `agents/stock_predictor_agent.py`
-
-Analyzes stock prices and predicts trends using technical analysis.
-
-**Tools:**
-- Fetch historical stock data
-- Calculate moving averages
-- Analyze volatility
-- Predict future trends
-- Identify support/resistance levels
-- Explain price movements
-- Generate trading reports
-
-**Run:** `python agents/stock_predictor_agent.py`
-
----
-
-### 2. Supply Chain Optimizer Agent
-**Location:** `agents/supply_chain_optimizer_agent.py`
-
-Optimizes supplier selection and order allocation.
-
-**Tools:**
-- Score suppliers by reliability, speed, cost
-- Allocate demand across suppliers
-- Assess supply chain risk
-- Calculate reorder points
-- Simulate disruptions
-- Generate recommendations
-
-**Run:** `python agents/supply_chain_optimizer_agent.py`
-
----
-
-### 3. Operations Consulting Agent
-**Location:** `agents/ops_consult_agent.py`
-
-Analyzes business problems and provides data-driven recommendations.
-
-**Tools:**
-- Classify business problems
-- Summarize data and find trends
-- Identify bottlenecks
-- Analyze cost drivers
-- Simulate scenarios
-- Generate recommendations
-- Create consultant reports
-
-**Run:** `python agents/ops_consult_agent.py`
-
-**Demo:** `python agents/consulting_agent_demo.py`
-
----
-
-### 4. Health Insights Agent
-**Location:** `health_insights/health_insights_agent.py`
-
-Educational health analysis tool (NOT a medical diagnosis tool).
-
-**Tools:**
-- Extract lab values from medical reports
-- Normalize units
-- Check clinical reference ranges
-- Flag abnormal values
-- Detect multi-marker patterns
-- Score risk levels
-- Generate plain language explanations
-- Build structured reports
-
-**Run Tests:**
-- `python health_insights/simple_test.py` (fastest)
-- `python health_insights/quick_test.py` (4 scenarios)
-- `python health_insights/health_insights_demo.py` (full walkthrough)
-- `python health_insights/test_health_insights.py` (interactive)
-
-**Documentation:** See `docs/HEALTH_INSIGHTS_*.md`
-
----
-
-## 📚 Documentation
-
-### Health Insights Agent Docs
-- **Quick Start:** `docs/HEALTH_INSIGHTS_QUICK_START.md`
-- **Full Guide:** `docs/HEALTH_INSIGHTS_README.md`
-- **Architecture:** `docs/HEALTH_INSIGHTS_ARCHITECTURE.md`
-- **Examples:** `docs/HEALTH_INSIGHTS_EXAMPLES.md`
-- **Summary:** `docs/HEALTH_INSIGHTS_SUMMARY.md`
-- **Index:** `docs/HEALTH_INSIGHTS_INDEX.md`
-
-### Testing
-- **Test Guide:** `docs/RUN_TESTS.md`
-- **Test Results:** `docs/TESTING_COMPLETE.txt`
-
----
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### 1. Setup Environment
+
 ```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Run an Agent
+### 2. Configure Credentials
+
+Copy `.env.example` to `.env` and add your AWS credentials:
+
 ```bash
-# Stock Predictor
-python agents/stock_predictor_agent.py
-
-# Supply Chain Optimizer
-python agents/supply_chain_optimizer_agent.py
-
-# Operations Consultant
-python agents/ops_consult_agent.py
-
-# Health Insights (Demo)
-python health_insights/simple_test.py
+cp .env.example .env
 ```
 
-### 3. Test Health Insights
+Edit `.env` with:
+- `AWS_ACCESS_KEY_ID` - Your AWS access key
+- `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
+- `AWS_DEFAULT_REGION` - us-east-1 (or your region)
+
+### 3. Run the App
+
 ```bash
-python health_insights/simple_test.py
+streamlit run streamlit_app.py
 ```
 
----
+Visit `http://localhost:8501` in your browser.
 
-## 📋 Agent Comparison
+## 🛠️ Tools
 
-| Agent | Purpose | Use Case |
-|-------|---------|----------|
-| **Stock Predictor** | Analyze stock trends | Investment analysis |
-| **Supply Chain Optimizer** | Optimize suppliers | Procurement decisions |
-| **Operations Consultant** | Solve business problems | Process improvement |
-| **Health Insights** | Analyze lab reports | Educational health info |
+### Local Tools (6)
+1. **assess_vitals** - Evaluate blood pressure and heart rate
+2. **check_symptoms** - Cross-reference symptoms with conditions
+3. **check_drug_interaction** - Check medication interactions
+4. **get_treatment_guidelines** - Get plain English treatment advice
+5. **summarize_patient_session** - Create health report summaries
+6. **search_medical_knowledge** - Search medical knowledge base
 
----
+### API-Based Tools (3)
+1. **get_real_drug_info** - RxNorm API (NIH) - Real drug information
+2. **check_real_drug_interactions** - RxNorm API - Real drug interactions
+3. **get_drug_adverse_events** - OpenFDA API - Real adverse event data
 
-## ⚠️ Important Notes
+## 📚 Documentation
 
-### Health Insights Agent
-- **Educational use only** - NOT a medical diagnosis tool
-- Always includes medical disclaimer
-- Recommends consulting healthcare professionals
-- No treatment recommendations provided
+- **Getting Started:** `docs/CLINICAL_DECISION_SUPPORT_QUICKSTART.md`
+- **Complete Guide:** `docs/CLINICAL_DECISION_SUPPORT_COMPLETE_GUIDE.md`
+- **Strands Basics:** `docs/STRANDS_EXPLAINED_SIMPLE.md`
+- **One-Page Overview:** `docs/STRANDS_AND_TOOLS_SIMPLE.md`
+- **Tool Deep Dive:** `docs/HOW_ASSESS_VITALS_WORKS.md`
+- **APIs Used:** `docs/APIS_USED.md`
 
-### Other Agents
-- Use simulated/demo data for examples
-- Replace with real APIs for production use
-- Requires Strands Agent framework
+## 🤖 How It Works
 
----
+### Strands Framework
+Strands is an agent framework that:
+1. Takes user input
+2. Decides which tools to use
+3. Calls the tools
+4. Processes results
+5. Generates a response
+
+### The Agent Loop
+```
+User Input → Agent Thinks → Selects Tools → Calls Tools → Processes Results → Response
+```
+
+### Example Conversation
+```
+User: "My blood pressure is 160 over 90"
+Agent: "That's a little on the high side. Are you feeling anything like headaches?"
+User: "No, just stressed lately"
+Agent: "Stress can definitely raise blood pressure. Here's what helps..."
+```
+
+## ⚠️ Important Disclaimer
+
+**This is a clinical assistant tool, NOT a replacement for real medical care.**
+
+- For emergencies, call 911
+- Always consult a real doctor for serious concerns
+- This tool provides general guidance only
+- Not for diagnosis or treatment decisions
+
+## 🔧 Configuration
+
+### Model
+Currently uses **Amazon Nova 2 Lite** (`us.amazon.nova-2-lite-v1:0`)
+
+To change the model, edit `streamlit_app.py`:
+```python
+agent = Agent(
+    model="your-model-name",  # Change here
+    tools=[...],
+    system_prompt=system_prompt
+)
+```
+
+### Streamlit Config
+Edit `.streamlit/config.toml` to customize the web app appearance.
+
+## 📊 Testing
+
+### Test CLI Version
+```bash
+python agents/test_clinical_agent.py
+```
+
+### Test Real Medical APIs
+```bash
+python agents/test_real_medical_data.py
+```
+
+## 🌐 Deployment
+
+### Streamlit Cloud
+1. Push code to GitHub
+2. Go to https://streamlit.io/cloud
+3. Connect your GitHub repo
+4. Deploy
+
+### Environment Variables
+Set these in Streamlit Cloud secrets:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_DEFAULT_REGION`
 
 ## 📦 Requirements
 
 - Python 3.8+
-- Strands Agent SDK (for agents)
-- See `requirements.txt` for full list
+- Strands Agents SDK
+- Streamlit
+- AWS credentials (for Bedrock/Nova model)
 
----
+See `requirements.txt` for full list.
 
-## 🗂️ Legacy Files
+## 🎯 Use Cases
 
-Old tutorials, learning materials, and archived code are in the `legacy/` folder.
+- Patient health consultations
+- Medication interaction checking
+- Symptom assessment
+- Treatment guideline lookup
+- Health education
+- Medical data analysis
 
----
+## 🔐 Security
+
+- `.env` file is excluded from git (see `.gitignore`)
+- Never commit credentials
+- Use environment variables for secrets
+- AWS credentials are required for production
 
 ## 📝 License
 
 Educational use only.
 
----
-
 ## 🤝 Contributing
 
-To add a new agent:
-1. Create agent file in `agents/` folder
-2. Add documentation in `docs/` folder
-3. Update this README
+To improve the agent:
+1. Add new tools in the agent file
+2. Update documentation
+3. Test thoroughly
+4. Commit and push
+
+## 📞 Support
+
+For issues or questions:
+1. Check the documentation in `docs/`
+2. Review the test files
+3. Check Strands documentation
 
 ---
 
-**Last Updated:** February 5, 2026
+**Built with:** Strands Agents SDK, Amazon Bedrock, Streamlit
+
+**Last Updated:** February 15, 2026
