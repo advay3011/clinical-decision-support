@@ -1,28 +1,140 @@
 """
-Clinical Decision Support Chatbot - Streamlit Web Interface
-Main entry point for Streamlit Cloud deployment
+Clinical Decision Support Chatbot - Enhanced with Real Medical Data
+Integrates RxNorm API for real drug information and interactions
 """
 
-import streamlit as st
 from strands import Agent, tool
+import requests
 from datetime import datetime
-import threading
-from queue import Queue
-import time
+import json
 
 # ============================================================================
-# PAGE CONFIG
+# REAL MEDICAL DATA TOOLS (RxNorm API)
 # ============================================================================
 
-st.set_page_config(
-    page_title="Clinical Decision Support",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+@tool
+def get_real_drug_info(drug_name: str) -> dict:
+    """Get real drug information from RxNorm API (NIH)."""
+    try:
+        # Search for drug
+        search_url = f"https://rxnav.nlm.nih.gov/REST/drugs.json?name={drug_name}"
+        search_response = requests.get(search_url, timeout=5)
+        search_data = search_response.json()
+        
+        if not search_data.get('drugGroup', {}).get('conceptGroup'):
+            return {"error": f"Drug '{drug_name}' not found in RxNorm database"}
+        
+        # Get first result
+        concept = search_data['drugGroup']['conceptGroup'][0]['conceptProperties'][0]
+        rxcui = concept['rxcui']
+        
+        # Get drug properties
+        props_url = f"https://rxnav.nlm.nih.gov/REST/rxcui/{rxcui}/properties.json"
+        props_response = requests.get(props_url, timeout=5)
+        props_data = props_response.json()
+        
+        return {
+            "name": concept['name'],
+            "rxcui": rxcui,
+            "tty": concept['tty'],
+            "found": True,
+            "source": "RxNorm (NIH)"
+        }
+    except Exception as e:
+        return {"error": str(e), "found": False}
+
+
+@tool
+def check_real_drug_interactions(drug_names: list[str]) -> dict:
+    """Check real drug interactions from RxNorm API."""
+    try:
+        # Get RXCUIs for all drugs
+        rxcuis = []
+        drug_info = {}
+        
+        for drug in drug_names:
+            search_url = f"https://rxnav.nlm.nih.gov/REST/drugs.json?name={drug}"
+            response = requests.get(search_url, timeout=5)
+            data = response.json()
+            
+            if data.get('drugGroup', {}).get('conceptGroup'):
+                concept = data['drugGroup']['conceptGroup'][0]['conceptProperties'][0]
+                rxcui = concept['rxcui']
+                rxcuis.append(rxcui)
+                drug_info[drug] = concept['name']
+        
+        if len(rxcuis) < 2:
+            return {
+                "safe": True,
+                "interactions": [],
+                "note": "Need at least 2 valid drugs to check interactions"
+            }
+        
+        # Check interactions
+        interaction_url = "https://rxnav.nlm.nih.gov/REST/interaction/list.json"
+        params = {"rxcuis": "+".join(rxcuis)}
+        response = requests.get(interaction_url, params=params, timeout=5)
+        interaction_data = response.json()
+        
+        interactions = []
+        if 'fullInteractionTypeGroup' in interaction_data:
+            for group in interaction_data['fullInteractionTypeGroup']:
+                for interaction in group.get('fullInteractionType', []):
+                    for pair in interaction.get('interactionPair', []):
+                        interactions.append({
+                            "drugs": [pair['interactionConcept'][0]['sourceConceptItem']['name'],
+                                     pair['interactionConcept'][1]['sourceConceptItem']['name']],
+                            "severity": pair.get('severity', 'Unknown'),
+                            "description": pair.get('description', 'No description available')
+                        })
+        
+        return {
+            "safe": len(interactions) == 0,
+            "interactions": interactions,
+            "drugs_checked": drug_info,
+            "source": "RxNorm (NIH)"
+        }
+    except Exception as e:
+        return {"error": str(e), "safe": True, "interactions": []}
+
+
+@tool
+def get_drug_adverse_events(drug_name: str) -> dict:
+    """Get real adverse events from OpenFDA API."""
+    try:
+        url = "https://api.fda.gov/drug/event.json"
+        params = {
+            "search": f'patient.drug.openfda.generic_name:"{drug_name}"',
+            "limit": 5,
+            "count": "patient.reaction.reactionmeddrapt.exact"
+        }
+        response = requests.get(url, params=params, timeout=5)
+        data = response.json()
+        
+        if 'results' in data and data['results']:
+            adverse_events = []
+            for result in data['results'][:5]:
+                adverse_events.append({
+                    "reaction": result.get('term', 'Unknown'),
+                    "count": result.get('count', 0)
+                })
+            
+            return {
+                "drug": drug_name,
+                "adverse_events": adverse_events,
+                "source": "OpenFDA"
+            }
+        return {
+            "drug": drug_name,
+            "adverse_events": [],
+            "note": "No adverse event data found"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 
 # ============================================================================
-# TOOLS (Same as CLI version)
+# ORIGINAL TOOLS (Kept for compatibility)
 # ============================================================================
 
 @tool
@@ -95,45 +207,6 @@ def check_symptoms(symptoms: list[str]) -> dict:
         "possible_conditions": [{"condition": c, "relevance": r} for c, r in ranked[:5]],
         "disclaimer": "These are possibilities only - a real doctor needs to examine you for diagnosis"
     }
-
-
-@tool
-def check_drug_interaction(drugs: list[str]) -> dict:
-    """Checks for known dangerous interactions between medications."""
-    interactions = {
-        ("metformin", "lisinopril"): {"severity": "low", "note": "No major interaction"},
-        ("aspirin", "warfarin"): {"severity": "high", "note": "Increased bleeding risk"},
-        ("metformin", "alcohol"): {"severity": "moderate", "note": "May increase lactic acidosis risk"},
-        ("lisinopril", "potassium"): {"severity": "moderate", "note": "May raise potassium levels"},
-    }
-    
-    result = {
-        "drugs_checked": drugs,
-        "interactions": [],
-        "safe": True
-    }
-    
-    for i, drug1 in enumerate(drugs):
-        for drug2 in drugs[i+1:]:
-            key1 = (drug1.lower(), drug2.lower())
-            key2 = (drug2.lower(), drug1.lower())
-            
-            if key1 in interactions:
-                result["interactions"].append({
-                    "drugs": [drug1, drug2],
-                    **interactions[key1]
-                })
-                if interactions[key1]["severity"] in ["high", "moderate"]:
-                    result["safe"] = False
-            elif key2 in interactions:
-                result["interactions"].append({
-                    "drugs": [drug2, drug1],
-                    **interactions[key2]
-                })
-                if interactions[key2]["severity"] in ["high", "moderate"]:
-                    result["safe"] = False
-    
-    return result
 
 
 @tool
@@ -236,37 +309,6 @@ def search_medical_knowledge(query: str) -> dict:
 # AGENT SETUP
 # ============================================================================
 
-# Request handler to avoid concurrent invocation errors
-def process_agent_request(user_input, agent):
-    """Process agent request sequentially to avoid concurrent invocation errors."""
-    try:
-        result = agent(user_input)
-        
-        # Extract text from AgentResult object
-        if hasattr(result, 'message'):
-            content = result.message.get('content', [])
-            if isinstance(content, list) and len(content) > 0:
-                response = content[0].get('text', str(result))
-            else:
-                response = str(result)
-        else:
-            response = str(result)
-        
-        return response
-    except Exception as e:
-        return f"I encountered an issue: {str(e)}"
-
-def stream_response(response_text):
-    """Stream response text word by word for better UX."""
-    words = response_text.split()
-    placeholder = st.empty()
-    full_text = ""
-    
-    for word in words:
-        full_text += word + " "
-        placeholder.write(full_text)
-        time.sleep(0.02)  # Small delay between words for streaming effect
-
 system_prompt = """You are a friendly and knowledgeable clinical assistant. You talk to patients in simple, warm, plain English — never cold or robotic.
 
 KEY BEHAVIORS:
@@ -279,195 +321,87 @@ KEY BEHAVIORS:
 7. Always remind users to see a real doctor for anything serious
 8. End responses with a natural follow-up question to keep conversation going
 9. Never dump all information at once - share one key insight at a time
+10. When checking medications, use real drug data from RxNorm API
+11. When checking interactions, provide real data from medical databases
 
 TONE: Like a friendly, experienced doctor who actually listens and explains things clearly.
 
 DISCLAIMER: Always remind patients that you're a clinical assistant, not a replacement for real medical care. For serious concerns, they need to see a real doctor."""
 
-@st.cache_resource
-def get_agent():
-    """Initialize the agent once and cache it."""
-    return Agent(
-        model="us.amazon.nova-2-lite-v1:0",
-        tools=[
-            assess_vitals,
-            check_symptoms,
-            check_drug_interaction,
-            get_treatment_guidelines,
-            summarize_patient_session,
-            search_medical_knowledge
-        ],
-        system_prompt=system_prompt
-    )
+agent = Agent(
+    model="us.amazon.nova-2-lite-v1:0",
+    tools=[
+        # Real medical data tools
+        get_real_drug_info,
+        check_real_drug_interactions,
+        get_drug_adverse_events,
+        # Original tools
+        assess_vitals,
+        check_symptoms,
+        get_treatment_guidelines,
+        summarize_patient_session,
+        search_medical_knowledge
+    ],
+    system_prompt=system_prompt
+)
 
 
 # ============================================================================
-# STREAMLIT UI
+# CONVERSATION LOOP
 # ============================================================================
 
-# Initialize session state FIRST (before any UI elements)
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "agent" not in st.session_state:
-    st.session_state.agent = get_agent()
-if "patient" not in st.session_state:
-    st.session_state.patient = None
-if "show_registration" not in st.session_state:
-    st.session_state.show_registration = True
-
-# Header
-st.markdown("""
-    <div style='text-align: center; padding: 20px;'>
-        <h1>🏥 Clinical Decision Support</h1>
-        <p style='font-size: 18px; color: #666;'>Your friendly clinical assistant</p>
-    </div>
-""", unsafe_allow_html=True)
-
-# Disclaimer
-st.warning("""
-    ⚠️ **Important Disclaimer**: This is a clinical assistant tool, not a replacement for real medical care. 
-    For emergencies, call 911. Always consult a real doctor for serious concerns.
-""")
-
-# Patient Registration
-if st.session_state.show_registration or st.session_state.patient is None:
-    st.markdown("### 👤 Patient Registration")
+def run_chatbot():
+    """Run the enhanced clinical decision support chatbot."""
+    print("\n" + "="*70)
+    print("CLINICAL DECISION SUPPORT CHATBOT - ENHANCED WITH REAL MEDICAL DATA")
+    print("="*70)
+    print("\nHi! I'm your clinical assistant. I'm here to listen and help you")
+    print("understand what's going on with your health. I now have access to")
+    print("real medical data from NIH and FDA databases.\n")
+    print("Type 'quit' to exit.\n")
+    print("-"*70 + "\n")
     
-    col1, col2, col3 = st.columns(3)
+    conversation_history = []
     
-    with col1:
-        patient_name = st.text_input("Patient Name", placeholder="John Doe", key="reg_name")
-    
-    with col2:
-        from datetime import datetime, date
-        patient_dob = st.date_input(
-            "Date of Birth", 
-            value=None,
-            min_value=date(1900, 1, 1),
-            max_value=date.today(),
-            key="reg_dob"
-        )
-    
-    with col3:
-        patient_gender = st.selectbox("Gender", ["Select...", "Male", "Female", "Other", "Prefer not to say"], key="reg_gender")
-    
-    col_btn1, col_btn2 = st.columns(2)
-    
-    with col_btn1:
-        if st.button("✅ Register Patient", use_container_width=True, key="btn_register"):
-            if patient_name and patient_dob and patient_gender != "Select...":
-                # Calculate age
-                from datetime import datetime
-                today = datetime.now().date()
-                age = (today - patient_dob).days // 365
-                
-                st.session_state.patient = {
-                    "name": patient_name,
-                    "dob": patient_dob,
-                    "gender": patient_gender,
-                    "age": age,
-                    "registration_date": datetime.now().isoformat()
-                }
-                st.session_state.show_registration = False
-                st.success(f"✅ Patient {patient_name} registered successfully!")
-                st.rerun()
-            else:
-                st.error("Please fill in all fields")
-    
-    with col_btn2:
-        if st.button("⏭️ Skip Registration", use_container_width=True, key="btn_skip"):
-            st.session_state.patient = {"name": "Guest", "age": None, "gender": None}
-            st.session_state.show_registration = False
-            st.rerun()
-    
-    st.divider()
-
-# Show patient info if registered
-if st.session_state.patient:
-    patient = st.session_state.patient
-    st.markdown(f"""
-    **👤 Patient:** {patient['name']} | **Age:** {patient['age']} | **Gender:** {patient['gender']}
-    """)
-    
-    if st.button("🔄 Change Patient"):
-        st.session_state.patient = None
-        st.session_state.messages = []
-        st.session_state.show_registration = True
-        st.rerun()
-    
-    st.divider()
-
-# Sidebar with info
-with st.sidebar:
-    st.markdown("### 💡 How to Use")
-    st.markdown("""
-    1. **Share your concern** - Tell me about your symptoms or health question
-    2. **Answer my questions** - I'll ask follow-ups to understand better
-    3. **Get guidance** - I'll provide practical advice and next steps
-    4. **Ask for summary** - Request a summary of our conversation anytime
-    
-    ### 📋 Quick Commands
-    - "my blood pressure is X over Y"
-    - "i have [symptom]"
-    - "i take [medication]"
-    - "summarize our chat"
-    - "what is [condition/medication]?"
-    """)
-    
-    st.markdown("---")
-    st.markdown("### ℹ️ About")
-    st.markdown("""
-    This chatbot uses AI to provide general health guidance. It can:
-    - Assess vital signs
-    - Check symptoms
-    - Verify medication interactions
-    - Provide treatment guidelines
-    - Summarize conversations
-    """)
-
-# Chat display
-st.markdown("### 💬 Conversation")
-
-# Display chat history
-for message in st.session_state.messages:
-    if message["role"] == "user":
-        st.chat_message("user").write(message["content"])
-    else:
-        st.chat_message("assistant").write(message["content"])
-
-# Chat input
-user_input = st.chat_input("Tell me about your health concern...")
-
-if user_input:
-    # Add user message to history
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    st.chat_message("user").write(user_input)
-    
-    # Get agent response
-    with st.spinner("Thinking..."):
+    while True:
         try:
-            # Add patient context to the message if registered
-            patient_context = ""
-            if st.session_state.patient:
-                patient = st.session_state.patient
-                patient_context = f"\n\n[Patient Context: Name: {patient['name']}, Age: {patient['age']}, Gender: {patient['gender']}]"
+            user_input = input("You: ").strip()
             
-            full_input = user_input + patient_context
-            response = process_agent_request(full_input, st.session_state.agent)
-            st.session_state.messages.append({"role": "assistant", "content": response})
+            if user_input.lower() in ['quit', 'exit', 'bye']:
+                print("\nAgent: Take care of yourself! Remember to follow up with your doctor if needed. Bye!")
+                break
             
-            # Stream the response
-            with st.chat_message("assistant"):
-                stream_response(response)
+            if not user_input:
+                continue
+            
+            # Get response from agent
+            result = agent(user_input)
+            
+            # Extract text from AgentResult object
+            if hasattr(result, 'message'):
+                content = result.message.get('content', [])
+                if isinstance(content, list) and len(content) > 0:
+                    response = content[0].get('text', str(result))
+                else:
+                    response = str(result)
+            else:
+                response = str(result)
+            
+            print(f"\nAgent: {response}\n")
+            
+            # Store in history
+            conversation_history.append({
+                "user": user_input,
+                "agent": response
+            })
+            
+        except KeyboardInterrupt:
+            print("\n\nAgent: Take care! Remember to see your doctor if needed.")
+            break
         except Exception as e:
-            error_msg = f"I encountered an issue: {str(e)}"
-            st.session_state.messages.append({"role": "assistant", "content": error_msg})
-            st.chat_message("assistant").error(error_msg)
+            print(f"\nAgent: I encountered an issue: {str(e)}")
+            print("Let's try again.\n")
 
-# Footer
-st.markdown("---")
-st.markdown("""
-    <div style='text-align: center; color: #999; font-size: 12px; padding: 20px;'>
-        Clinical Decision Support Chatbot | Built with Strands Agents SDK
-    </div>
-""", unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    run_chatbot()

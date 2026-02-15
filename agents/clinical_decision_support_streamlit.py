@@ -7,6 +7,9 @@ import streamlit as st
 from strands import Agent, tool
 from datetime import datetime
 import json
+import threading
+from queue import Queue
+import time
 
 # ============================================================================
 # PAGE CONFIG
@@ -234,6 +237,40 @@ def search_medical_knowledge(query: str) -> dict:
 # AGENT SETUP
 # ============================================================================
 
+# Global request queue to handle concurrent requests
+request_queue = Queue()
+processing = False
+
+def process_agent_request(user_input, agent):
+    """Process agent request sequentially to avoid concurrent invocation errors."""
+    try:
+        result = agent(user_input)
+        
+        # Extract text from AgentResult object
+        if hasattr(result, 'message'):
+            content = result.message.get('content', [])
+            if isinstance(content, list) and len(content) > 0:
+                response = content[0].get('text', str(result))
+            else:
+                response = str(result)
+        else:
+            response = str(result)
+        
+        return response
+    except Exception as e:
+        return f"I encountered an issue: {str(e)}"
+
+def stream_response(response_text):
+    """Stream response text word by word for better UX."""
+    words = response_text.split()
+    placeholder = st.empty()
+    full_text = ""
+    
+    for word in words:
+        full_text += word + " "
+        placeholder.write(full_text)
+        time.sleep(0.02)  # Small delay between words for streaming effect
+
 system_prompt = """You are a friendly and knowledgeable clinical assistant. You talk to patients in simple, warm, plain English — never cold or robotic.
 
 KEY BEHAVIORS:
@@ -255,6 +292,7 @@ DISCLAIMER: Always remind patients that you're a clinical assistant, not a repla
 def get_agent():
     """Initialize the agent once and cache it."""
     return Agent(
+        model="us.amazon.nova-2-lite-v1:0",
         tools=[
             assess_vitals,
             check_symptoms,
@@ -271,6 +309,16 @@ def get_agent():
 # STREAMLIT UI
 # ============================================================================
 
+# Initialize session state FIRST (before any UI elements)
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "agent" not in st.session_state:
+    st.session_state.agent = get_agent()
+if "patient" not in st.session_state:
+    st.session_state.patient = None
+if "show_registration" not in st.session_state:
+    st.session_state.show_registration = True
+
 # Header
 st.markdown("""
     <div style='text-align: center; padding: 20px;'>
@@ -285,11 +333,73 @@ st.warning("""
     For emergencies, call 911. Always consult a real doctor for serious concerns.
 """)
 
-# Initialize session state
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "agent" not in st.session_state:
-    st.session_state.agent = get_agent()
+# Patient Registration
+if st.session_state.show_registration or st.session_state.patient is None:
+    st.markdown("### 👤 Patient Registration")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        patient_name = st.text_input("Patient Name", placeholder="John Doe", key="reg_name")
+    
+    with col2:
+        from datetime import datetime, date
+        patient_dob = st.date_input(
+            "Date of Birth", 
+            value=None,
+            min_value=date(1900, 1, 1),
+            max_value=date.today(),
+            key="reg_dob"
+        )
+    
+    with col3:
+        patient_gender = st.selectbox("Gender", ["Select...", "Male", "Female", "Other", "Prefer not to say"], key="reg_gender")
+    
+    col_btn1, col_btn2 = st.columns(2)
+    
+    with col_btn1:
+        if st.button("✅ Register Patient", use_container_width=True, key="btn_register"):
+            if patient_name and patient_dob and patient_gender != "Select...":
+                # Calculate age
+                from datetime import datetime
+                today = datetime.now().date()
+                age = (today - patient_dob).days // 365
+                
+                st.session_state.patient = {
+                    "name": patient_name,
+                    "dob": patient_dob,
+                    "gender": patient_gender,
+                    "age": age,
+                    "registration_date": datetime.now().isoformat()
+                }
+                st.session_state.show_registration = False
+                st.success(f"✅ Patient {patient_name} registered successfully!")
+                st.rerun()
+            else:
+                st.error("Please fill in all fields")
+    
+    with col_btn2:
+        if st.button("⏭️ Skip Registration", use_container_width=True, key="btn_skip"):
+            st.session_state.patient = {"name": "Guest", "age": None, "gender": None}
+            st.session_state.show_registration = False
+            st.rerun()
+    
+    st.divider()
+
+# Show patient info if registered
+if st.session_state.patient:
+    patient = st.session_state.patient
+    st.markdown(f"""
+    **👤 Patient:** {patient['name']} | **Age:** {patient['age']} | **Gender:** {patient['gender']}
+    """)
+    
+    if st.button("🔄 Change Patient"):
+        st.session_state.patient = None
+        st.session_state.messages = []
+        st.session_state.show_registration = True
+        st.rerun()
+    
+    st.divider()
 
 # Sidebar with info
 with st.sidebar:
@@ -340,22 +450,19 @@ if user_input:
     # Get agent response
     with st.spinner("Thinking..."):
         try:
-            result = st.session_state.agent(user_input)
+            # Add patient context to the message if registered
+            patient_context = ""
+            if st.session_state.patient:
+                patient = st.session_state.patient
+                patient_context = f"\n\n[Patient Context: Name: {patient['name']}, Age: {patient['age']}, Gender: {patient['gender']}]"
             
-            # Extract text from AgentResult object
-            if hasattr(result, 'message'):
-                # It's an AgentResult object
-                content = result.message.get('content', [])
-                if isinstance(content, list) and len(content) > 0:
-                    response = content[0].get('text', str(result))
-                else:
-                    response = str(result)
-            else:
-                # It's already a string
-                response = str(result)
-            
+            full_input = user_input + patient_context
+            response = process_agent_request(full_input, st.session_state.agent)
             st.session_state.messages.append({"role": "assistant", "content": response})
-            st.chat_message("assistant").write(response)
+            
+            # Stream the response
+            with st.chat_message("assistant"):
+                stream_response(response)
         except Exception as e:
             error_msg = f"I encountered an issue: {str(e)}"
             st.session_state.messages.append({"role": "assistant", "content": error_msg})
